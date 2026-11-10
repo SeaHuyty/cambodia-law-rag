@@ -104,10 +104,10 @@ def _content_hash(chunks: list[dict]) -> str:
     return h.hexdigest()[:16]
 
 
-def _load_model(model_name: str, max_length: int):
+def _load_model(model_name: str, max_length: int, device: str | None = None):
     from sentence_transformers import SentenceTransformer  # heavy import, keep lazy
 
-    model = SentenceTransformer(model_name)
+    model = SentenceTransformer(model_name, device=device)  # None = auto (cuda/mps/cpu)
     model.max_seq_length = max_length
     return model
 
@@ -120,6 +120,7 @@ def embed_chunks(
     passage_prefix: str = "",
     max_length: int = 1024,
     batch_size: int = 16,
+    device: str | None = None,
     force: bool = False,
 ) -> tuple[np.ndarray, dict]:
     """Embed chunks (or load the cache). Returns (vectors, info)."""
@@ -135,7 +136,7 @@ def embed_chunks(
                 print(f"[cache] loaded {vectors.shape} from {vec_path}")
                 return vectors, info
 
-    model = _load_model(model_name, max_length)
+    model = _load_model(model_name, max_length, device)
     t0 = time.time()
     vectors = model.encode(
         [passage_prefix + c["embed_text"] for c in chunks],
@@ -167,9 +168,10 @@ def embed_chunks(
 
 
 def embed_queries(
-    model_name: str, questions: list[dict], *, query_prefix: str = "", max_length: int = 1024
+    model_name: str, questions: list[dict], *, query_prefix: str = "", max_length: int = 1024,
+    device: str | None = None,
 ) -> np.ndarray:
-    model = _load_model(model_name, max_length)
+    model = _load_model(model_name, max_length, device)
     return model.encode(
         [query_prefix + q["question"] for q in questions],
         normalize_embeddings=True,
@@ -251,13 +253,15 @@ def run_experiment(
     passage_prefix: str = "",
     max_length: int = 1024,
     batch_size: int = 16,
+    device: str | None = None,
     force: bool = False,
 ) -> dict:
     vectors, info = embed_chunks(
         name, model_name, chunks,
-        passage_prefix=passage_prefix, max_length=max_length, batch_size=batch_size, force=force,
+        passage_prefix=passage_prefix, max_length=max_length, batch_size=batch_size,
+        device=device, force=force,
     )
-    qv = embed_queries(model_name, questions, query_prefix=query_prefix, max_length=max_length)
+    qv = embed_queries(model_name, questions, query_prefix=query_prefix, max_length=max_length, device=device)
     result = evaluate(vectors, chunks, qv, questions)
     append_result(info, result["metrics"])
     result["info"] = info

@@ -1,2 +1,7 @@
 venv/
 __pycache__/
+.env
+# regenerable model-comparison embeddings
+app/engine/model/*/vectors.npy
+app/engine/model/*/chunks.json
+app/engine/model/*/info.json

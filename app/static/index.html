@@ -4,26 +4,51 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>ច្បាប់ចរាចរណ៍ផ្លូវគោក - សួរចម្លើយ</title>
-  <link rel="stylesheet" href="/static/style.css">
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <main>
-    <h1>ច្បាប់ចរាចរណ៍ផ្លូវគោក</h1>
-    <p class="sub">សួរសំណួរអំពីច្បាប់ចរាចរណ៍ជាភាសាខ្មែរ</p>
+  <header>
+    <div class="wrap">
+      <div class="logo" aria-hidden="true">⚖</div>
+      <div>
+        <h1>ច្បាប់ចរាចរណ៍ផ្លូវគោក</h1>
+        <p class="sub">សួរសំណួរ ទទួលបានចម្លើយងាយយល់ ពីអត្ថបទច្បាប់ផ្ទាល់</p>
+      </div>
+    </div>
+  </header>
 
+  <main class="wrap">
     <form id="form">
-      <textarea id="question" rows="3" required
-        placeholder="ឧ. តើត្រូវពាក់មួកសុវត្ថិភាពពេលជិះម៉ូតូដែរឬទេ?"></textarea>
-      <button id="submit" type="submit">សួរ</button>
+      <textarea id="question" rows="2" maxlength="1000" required
+        placeholder="វាយសំណួររបស់អ្នកនៅទីនេះ..."></textarea>
+      <div class="row">
+        <span class="hint">Enter ដើម្បីសួរ · Shift+Enter ដើម្បីចុះបន្ទាត់</span>
+        <button id="submit" type="submit">សួរ</button>
+      </div>
     </form>
 
-    <div id="status" role="status" aria-live="polite"></div>
-    <section id="answer" hidden></section>
+    <div id="examples" class="chips" aria-label="សំណួរគំរូ"></div>
+
+    <section id="loading" class="card" hidden aria-busy="true">
+      <div class="skel w80"></div><div class="skel w100"></div><div class="skel w60"></div>
+    </section>
+
+    <section id="answer" class="card" hidden>
+      <div class="card-head">
+        <span id="answer-label" class="label">ចម្លើយ</span>
+        <button id="copy" type="button" class="ghost">ចម្លង</button>
+      </div>
+      <div id="answer-body" class="prose"></div>
+      <p class="note">ចម្លើយនេះបង្កើតដោយ AI ពីអត្ថបទច្បាប់ដែលបានរកឃើញប៉ុណ្ណោះ។ សូមផ្ទៀងផ្ទាត់ជាមួយប្រភពខាងក្រោម។</p>
+    </section>
+
+    <div id="error" class="error" role="alert" hidden></div>
+
     <section id="sources" hidden>
-      <h2>ប្រភព / ឯកសារយោង</h2>
+      <h2>ប្រភព <span id="source-count" class="count"></span></h2>
       <div id="source-list"></div>
     </section>
   </main>
-  <script src="/static/app.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>

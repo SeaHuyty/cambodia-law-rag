@@ -3,11 +3,11 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI
-from fastapi.responses import FileResponse
+from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel, Field
 
-from app.database import get_collection, search
+from app.database import get_collection
+from app.api.api import router as api_router
 from app.engine.embedding import get_model
 
 
@@ -26,6 +26,8 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+app.include_router(api_router)
+
 
 @app.get("/health")
 async def read_health():
@@ -33,18 +35,10 @@ async def read_health():
 
 
 STATIC_DIR = Path(__file__).parent / "static"
-app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
-
-class AskRequest(BaseModel):
-    question: str = Field(min_length=1, max_length=1000)
-
-
-@app.post("/api/ask")
-async def ask(req: AskRequest):
-    return {"answer": None, "sources": search(req.question.strip())}
-
+app.mount("/static", StaticFiles(directory=STATIC_DIR, html=True), name="static")
 
 @app.get("/", include_in_schema=False)
 async def index():
-    return FileResponse(STATIC_DIR / "index.html")
+    # Redirect so the page's relative style.css/app.js resolve under /static/.
+    return RedirectResponse("/static/")

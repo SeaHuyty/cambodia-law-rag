@@ -5,6 +5,7 @@ embedding:
   max_length: 1024
 
 vector_store:
-  persist_dir: data/chroma
+  index_dir: app/engine/model/bge-m3 
+  persist_dir: data/chroma 
   collection_name: road_traffic_law
   top_k: 5

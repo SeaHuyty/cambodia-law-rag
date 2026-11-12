@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
-from app.database import get_collection
+from app.database import load_index
 from app.api.api import router as api_router
 from app.engine.embedding import get_model
 
@@ -15,7 +15,7 @@ from app.engine.embedding import get_model
 async def lifespan(app: FastAPI):
     # Load heavy resources once at startup instead of on the first request.
     get_model()
-    get_collection()
+    load_index()
     yield
 
 

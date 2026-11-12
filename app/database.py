@@ -1,4 +1,5 @@
-"""ChromaDB vector store for legal chunks (cosine similarity)."""
+"""Vector stores for legal chunks (cosine similarity)."""
+import json
 from functools import lru_cache
 from pathlib import Path
 
@@ -14,10 +15,43 @@ _PROJECT_ROOT = Path(__file__).parent.parent
 with open(_ENGINE_DIR / "configs" / "network_configs.yml", encoding="utf-8") as f:
     _cfg = yaml.safe_load(f)["vector_store"]
 
+INDEX_DIR = _PROJECT_ROOT / _cfg["index_dir"]
 PERSIST_DIR = _PROJECT_ROOT / _cfg["persist_dir"]
 COLLECTION_NAME = _cfg["collection_name"]
 DEFAULT_TOP_K = _cfg["top_k"]
 
+
+# ---- In-memory index (active) ----
+
+@lru_cache(maxsize=1)
+def load_index() -> tuple[np.ndarray, list[dict]]:
+    vectors = np.load(INDEX_DIR / "vectors.npy")
+    chunks = json.loads((INDEX_DIR / "chunks.json").read_text(encoding="utf-8"))
+    if len(vectors) != len(chunks):
+        raise ValueError(f"{INDEX_DIR}: {len(vectors)} vectors but {len(chunks)} chunks")
+    return vectors, chunks
+
+
+def search(query: str, top_k: int = DEFAULT_TOP_K) -> list[dict]:
+    """Top-k chunks by cosine similarity: [{id, text, metadata, score}].
+
+    Stored and query vectors are both L2-normalized, so cosine similarity is a dot product.
+    """
+    vectors, chunks = load_index()
+    scores = vectors @ embed_query(query)
+    top = np.argsort(-scores)[:top_k]
+    return [
+        {
+            "id": chunks[i]["id"],
+            "text": chunks[i]["text"],
+            "metadata": chunks[i].get("metadata") or {},
+            "score": float(scores[i]),
+        }
+        for i in top
+    ]
+
+
+# ---- ChromaDB (not used by the server right now) ----
 
 @lru_cache(maxsize=1)
 def get_collection() -> chromadb.Collection:
@@ -47,8 +81,8 @@ def add_chunks(chunks: list[dict]) -> int:
     return len(chunks)
 
 
-def search(query: str, top_k: int = DEFAULT_TOP_K) -> list[dict]:
-    """Return top-k chunks by cosine similarity: [{id, text, metadata, score}]."""
+def search_chroma(query: str, top_k: int = DEFAULT_TOP_K) -> list[dict]:
+    """Same output as search(), but queries the Chroma collection."""
     collection = get_collection()
     if collection.count() == 0:
         return []
